@@ -150,9 +150,11 @@ c1, c2, c3 = st.columns([0.06, 0.78, 0.16])
 with c1:
     uploaded_file = st.file_uploader("Upload PDF", type=["pdf"], label_visibility="collapsed", key="pdf")
 with c2:
-    prompt = st.text_input("Question", placeholder="Ask anything...", label_visibility="collapsed", key="prompt")
+    with st.form("chat_form", clear_on_submit=True):
+        st.text_input("Question", placeholder="Ask anything...", label_visibility="collapsed", key="prompt")
+        send = st.form_submit_button("Send", type="primary")
 with c3:
-    send = st.button("Send", type="primary", key="send")
+    st.empty()
 st.markdown("</div>", unsafe_allow_html=True)
 
 if uploaded_file:
@@ -166,6 +168,7 @@ if uploaded_file:
 st.markdown("</div>", unsafe_allow_html=True)
 
 # Handle send
+prompt = st.session_state.get("prompt", "")
 if send and prompt:
     st.session_state.messages.append({"role": "user", "content": prompt})
     with st.spinner(""):
