@@ -82,6 +82,15 @@ button[data-testid="stBaseButton-primary"] { background: #4a4a4a !important; bor
 button[data-testid="stBaseButton-primary"]:hover { background: #5a5a5a !important; }
 
 .file-chip { display: inline-flex; align-items: center; gap: 0.4rem; background: #2e2e2e; color: #bbb; font-size: 0.8rem; padding: 0.35rem 0.7rem; border-radius: 0.75rem; margin-top: 0.5rem; }
+
+.loader-row { display: flex; margin: 0.75rem 0; }
+.loader-bubble { background: #262626; color: #d6d6d6; padding: 0.75rem 1rem; border-radius: 1.25rem 1.25rem 1.25rem 0.25rem; display: inline-flex; align-items: center; gap: 0.6rem; }
+.loader-dots { display: inline-flex; align-items: center; gap: 0.25rem; }
+.loader-dots span { width: 6px; height: 6px; background: #8a8a8a; border-radius: 50%; animation: pulse 1.2s infinite ease-in-out; }
+.loader-dots span:nth-child(2) { animation-delay: 0.15s; }
+.loader-dots span:nth-child(3) { animation-delay: 0.3s; }
+@keyframes pulse { 0%, 80%, 100% { transform: scale(0.7); opacity: 0.5; } 40% { transform: scale(1.1); opacity: 1; } }
+.loader-text { font-size: 0.9rem; color: #cfcfcf; }
 </style>
 """,
     unsafe_allow_html=True,
@@ -145,12 +154,31 @@ for msg in st.session_state.messages:
     st.markdown(f"<div class='msg-row'><div class='{cls}'>{msg['content']}</div></div>", unsafe_allow_html=True)
 
 
+def _show_loader(text: str) -> st.delta_generator.DeltaGenerator:
+        placeholder = st.empty()
+        placeholder.markdown(
+                f"""
+<div class='loader-row'>
+    <div class='loader-bubble'>
+        <div class='loader-dots'>
+            <span></span><span></span><span></span>
+        </div>
+        <div class='loader-text'>{text}</div>
+    </div>
+</div>
+""",
+                unsafe_allow_html=True,
+        )
+        return placeholder
+
+
 def _submit_prompt() -> None:
     prompt = st.session_state.get("prompt", "").strip()
     if not prompt:
         return
     st.session_state.messages.append({"role": "user", "content": prompt})
-    with st.spinner(""):
+    loader = _show_loader("Thinking...")
+    try:
         if st.session_state.rag_chain:
             answer = st.session_state.rag_chain.invoke(prompt)
             reply = answer
@@ -161,9 +189,11 @@ def _submit_prompt() -> None:
                 HumanMessage(content=prompt),
             ])
             reply = resp.content
+    finally:
+        loader.empty()
     st.session_state.messages.append({"role": "assistant", "content": reply})
     st.session_state.prompt = ""
-    st.rerun()
+    st.session_state.pending_send = True
 
 # Input dock
 st.markdown("<div class='input-dock'><div class='input-box'>", unsafe_allow_html=True)
@@ -182,13 +212,20 @@ with c3:
     send = st.button("Send", type="primary", key="send")
 st.markdown("</div>", unsafe_allow_html=True)
 
+if st.session_state.get("pending_send"):
+    st.session_state.pending_send = False
+    st.rerun()
+
 if uploaded_file:
     st.markdown(f"<div class='file-chip'>📄 {uploaded_file.name}</div>", unsafe_allow_html=True)
     if st.session_state.rag_chain is None:
-        with st.spinner("Indexing..."):
+        loader = _show_loader("Indexing PDF...")
+        try:
             qa, ret = _build_rag(uploaded_file.read())
             st.session_state.rag_chain = qa
             st.session_state.retriever = ret
+        finally:
+            loader.empty()
 
 st.markdown("</div>", unsafe_allow_html=True)
 
