@@ -49,10 +49,19 @@ div[data-testid="stTextInput"] input { background: transparent !important; borde
 div[data-testid="stTextInput"] input::placeholder { color: #777 !important; }
 div[data-testid="stTextInput"] input:focus { box-shadow: none !important; }
 
-div[data-testid="stFileUploader"] { width: 40px; min-width: 40px; }
+div[data-testid="stFileUploader"] { width: 40px; min-width: 40px; margin: 0 !important; }
 div[data-testid="stFileUploader"] > label { display: none !important; }
 div[data-testid="stFileUploader"] section { background: transparent !important; border: none !important; padding: 0 !important; min-height: 40px !important; }
-div[data-testid="stFileUploader"] [data-testid="stFileUploaderDropzone"] { padding: 0 !important; border: none !important; background: transparent !important; min-height: 40px !important; }
+div[data-testid="stFileUploader"] [data-testid="stFileUploaderDropzone"] {
+    padding: 0 !important;
+    border: none !important;
+    background: transparent !important;
+    min-height: 40px !important;
+    width: 40px !important;
+    height: 40px !important;
+    overflow: hidden !important;
+}
+div[data-testid="stFileUploader"] [data-testid="stFileUploaderDropzone"] > div { display: none !important; }
 div[data-testid="stFileUploader"] [data-testid="stFileUploaderDropzoneInstructions"] { display: none !important; }
 
 div[data-testid="stFileUploader"] button {
@@ -82,6 +91,12 @@ button[data-testid="stBaseButton-primary"] { background: #4a4a4a !important; bor
 button[data-testid="stBaseButton-primary"]:hover { background: #5a5a5a !important; }
 
 .file-chip { display: inline-flex; align-items: center; gap: 0.4rem; background: #2e2e2e; color: #bbb; font-size: 0.8rem; padding: 0.35rem 0.7rem; border-radius: 0.75rem; margin-top: 0.5rem; }
+
+.typing { display: inline-flex; align-items: center; gap: 0.35rem; }
+.typing-dot { width: 6px; height: 6px; border-radius: 999px; background: #a6a6a6; animation: typing 1.2s infinite ease-in-out; }
+.typing-dot:nth-child(2) { animation-delay: 0.15s; }
+.typing-dot:nth-child(3) { animation-delay: 0.3s; }
+@keyframes typing { 0%, 80%, 100% { transform: translateY(0); opacity: 0.4; } 40% { transform: translateY(-3px); opacity: 1; } }
 
 </style>
 """,
