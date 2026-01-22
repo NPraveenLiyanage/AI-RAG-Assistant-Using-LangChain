@@ -87,10 +87,18 @@ button[data-testid="stBaseButton-primary"]:hover { background: #5a5a5a !importan
     unsafe_allow_html=True,
 )
 
-# Token check
-hf_token = os.getenv("HF_TOKEN") or os.getenv("HUGGINGFACEHUB_API_TOKEN")
+# Token check (local env or Streamlit secrets)
+hf_token = (
+    os.getenv("HF_TOKEN")
+    or os.getenv("HUGGINGFACEHUB_API_TOKEN")
+    or st.secrets.get("HF_TOKEN")
+    or st.secrets.get("HUGGINGFACEHUB_API_TOKEN")
+)
 if not hf_token:
-    st.error("Set HF_TOKEN in your environment.")
+    st.error(
+        "Missing Hugging Face token. Add HF_TOKEN (or HUGGINGFACEHUB_API_TOKEN) "
+        "in Streamlit Secrets or as an environment variable."
+    )
     st.stop()
 
 
