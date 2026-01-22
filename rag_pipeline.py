@@ -82,7 +82,9 @@ def split_documents(docs: List[Document]) -> List[Document]:
 # --- Task 3: embed documents ------------------------------------------------------
 def build_embeddings():
     _require_hf_token()
-    return HuggingFaceEmbeddings(model_name="sentence-transformers/all-MiniLM-L6-v2")
+    return HuggingFaceEmbeddings(
+        model_name="sentence-transformers/all-MiniLM-L6-v2"
+        )
 
 
 # --- Task 4: create and configure vector DB (Chroma) -----------------------------
@@ -102,7 +104,9 @@ def build_vectorstore(splits: List[Document], embed_model) -> Chroma:
 
 # --- Task 5: develop retriever ----------------------------------------------------
 def build_retriever(vectordb: Chroma):
-    return vectordb.as_retriever(search_type="mmr", search_kwargs={"k": 4, "fetch_k": 12})
+    return vectordb.as_retriever(search_type="mmr", 
+                                 search_kwargs={"k": 4, "fetch_k": 12}
+                                 )
 
 
 # --- Task 6: construct QA bot -----------------------------------------------------
