@@ -17,7 +17,7 @@ os.environ.setdefault("HUGGINGFACEHUB_USER_AGENT", default_agent)
 
 import shutil
 
-from langchain_community.document_loaders import PyPDFLoader, TextLoader
+from langchain_community.document_loaders import PyPDFLoader, TextLoader, CSVLoader, WebBaseLoader
 from langchain_text_splitters import RecursiveCharacterTextSplitter
 from langchain_huggingface import HuggingFaceEmbeddings
 from langchain_openai import ChatOpenAI
@@ -37,30 +37,35 @@ def _require_hf_token() -> None:
 
 
 # --- Task 1: load documents from multiple sources --------------------------------
-def load_documents(pdf_path: Optional[Path] = None) -> List[Document]:
+def load_documents(
+    pdf_path: Optional[Path] = None,
+    csv_path: Optional[Path] = None,
+    text_path: Optional[Path] = None,
+    urls: Optional[List[str]] = None,
+) -> List[Document]:
     data_dir = Path("data")
-    # Primary PDF for the lab scenario (must exist in project root)
-    lab_pdf = Path(
-        "A_Comprehensive_Review_of_Low_Rank_Adaptation_in_Large_Language_Models_for_Efficient_Parameter_Tuning-1.pdf"
-    )
-    chosen_pdf = Path(pdf_path) if pdf_path else lab_pdf
-    if not chosen_pdf.exists():
-        raise FileNotFoundError(
-            "Required PDF not found; ensure the lab PDF is in the project root with the exact filename."
-        )
 
-    text_path = data_dir / "notes.txt"
+    resolved_pdf = Path(pdf_path) if pdf_path else None
+    resolved_csv = Path(csv_path) if csv_path else None
+    resolved_txt = Path(text_path) if text_path else data_dir / "notes.txt"
 
-    loaders = [
-        PyPDFLoader(str(chosen_pdf)),
-        TextLoader(str(text_path), encoding="utf-8") if text_path.exists() else None,
-    ]
+    loaders = []
+    if resolved_pdf and resolved_pdf.exists():
+        loaders.append(PyPDFLoader(str(resolved_pdf)))
+    if resolved_csv and resolved_csv.exists():
+        loaders.append(CSVLoader(str(resolved_csv)))
+    if resolved_txt and resolved_txt.exists():
+        loaders.append(TextLoader(str(resolved_txt), encoding="utf-8"))
+    if urls:
+        loaders.append(WebBaseLoader(urls))
 
     docs: List[Document] = []
     for loader in loaders:
-        if loader is None:
-            continue
         docs.extend(loader.load())
+    if not docs:
+        raise FileNotFoundError(
+            "No documents found. Provide at least one valid PDF, CSV, text file, or URL."
+        )
     return docs
 
 
