@@ -144,32 +144,11 @@ for msg in st.session_state.messages:
     cls = "msg-user" if msg["role"] == "user" else "msg-assistant"
     st.markdown(f"<div class='msg-row'><div class='{cls}'>{msg['content']}</div></div>", unsafe_allow_html=True)
 
-# Input dock
-st.markdown("<div class='input-dock'><div class='input-box'>", unsafe_allow_html=True)
-c1, c2, c3 = st.columns([0.06, 0.78, 0.16])
-with c1:
-    uploaded_file = st.file_uploader("Upload PDF", type=["pdf"], label_visibility="collapsed", key="pdf")
-with c2:
-    with st.form("chat_form", clear_on_submit=True):
-        st.text_input("Question", placeholder="Ask anything...", label_visibility="collapsed", key="prompt")
-        send = st.form_submit_button("Send", type="primary")
-with c3:
-    st.empty()
-st.markdown("</div>", unsafe_allow_html=True)
 
-if uploaded_file:
-    st.markdown(f"<div class='file-chip'>📄 {uploaded_file.name}</div>", unsafe_allow_html=True)
-    if st.session_state.rag_chain is None:
-        with st.spinner("Indexing..."):
-            qa, ret = _build_rag(uploaded_file.read())
-            st.session_state.rag_chain = qa
-            st.session_state.retriever = ret
-
-st.markdown("</div>", unsafe_allow_html=True)
-
-# Handle send
-prompt = st.session_state.get("prompt", "")
-if send and prompt:
+def _submit_prompt() -> None:
+    prompt = st.session_state.get("prompt", "").strip()
+    if not prompt:
+        return
     st.session_state.messages.append({"role": "user", "content": prompt})
     with st.spinner(""):
         if st.session_state.rag_chain:
@@ -183,4 +162,36 @@ if send and prompt:
             ])
             reply = resp.content
     st.session_state.messages.append({"role": "assistant", "content": reply})
+    st.session_state.prompt = ""
     st.rerun()
+
+# Input dock
+st.markdown("<div class='input-dock'><div class='input-box'>", unsafe_allow_html=True)
+c1, c2, c3 = st.columns([0.06, 0.78, 0.16])
+with c1:
+    uploaded_file = st.file_uploader("Upload PDF", type=["pdf"], label_visibility="collapsed", key="pdf")
+with c2:
+    st.text_input(
+        "Question",
+        placeholder="Ask anything...",
+        label_visibility="collapsed",
+        key="prompt",
+        on_change=_submit_prompt,
+    )
+with c3:
+    send = st.button("Send", type="primary", key="send")
+st.markdown("</div>", unsafe_allow_html=True)
+
+if uploaded_file:
+    st.markdown(f"<div class='file-chip'>📄 {uploaded_file.name}</div>", unsafe_allow_html=True)
+    if st.session_state.rag_chain is None:
+        with st.spinner("Indexing..."):
+            qa, ret = _build_rag(uploaded_file.read())
+            st.session_state.rag_chain = qa
+            st.session_state.retriever = ret
+
+st.markdown("</div>", unsafe_allow_html=True)
+
+# Handle send
+if send:
+    _submit_prompt()
