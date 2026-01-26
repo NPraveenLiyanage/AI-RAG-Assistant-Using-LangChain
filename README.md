@@ -17,14 +17,6 @@ Quest Analytics RAG Assistant is a lightweight research copiloting app that lets
 5. Place your PDF at `data/research.pdf` (or update the path). Optional: replace `data/notes.txt`.
 6. Run the demo: `python rag_pipeline.py`.
 
-## Screenshots to deliver
-Open `rag_pipeline.py` and capture these views:
-- Task 1 loader code → save as `pdf_loader.png`.
-- Task 2 splitter code → `code_splitter.png`.
-- Task 3 embeddings code → `embedding.png`.
-- Task 4 Chroma setup → `vectordb.png`.
-- Task 5 retriever code → `retriever.png`.
-
 ## Notes
 - The code is defensive: it skips local loaders if files are absent so you can run with only the web source at first.
 - Free path: LLM `llama3` + embeddings `mxbai-embed-large` via local Ollama.
