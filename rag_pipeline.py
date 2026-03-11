@@ -5,7 +5,7 @@ This script follows the six requested tasks end-to-end.
 """
 from pathlib import Path
 import os
-from typing import List, Optional
+from typing import Any, List, Optional
 
 from dotenv import load_dotenv
 
@@ -26,6 +26,24 @@ from langchain_core.prompts import ChatPromptTemplate
 from langchain_core.output_parsers import StrOutputParser
 from langchain_core.runnables import RunnablePassthrough
 from langchain_core.documents import Document
+
+
+def _sanitize_metadata_value(value: Any) -> Any:
+    """Convert metadata values to Chroma-safe scalar types."""
+    if value is None:
+        return ""
+    if isinstance(value, (str, int, float, bool)):
+        return value
+    return str(value)
+
+
+def _sanitize_documents_for_chroma(docs: List[Document]) -> List[Document]:
+    """Return new documents with Chroma-compatible metadata."""
+    sanitized: List[Document] = []
+    for doc in docs:
+        clean_meta = {k: _sanitize_metadata_value(v) for k, v in (doc.metadata or {}).items()}
+        sanitized.append(Document(page_content=doc.page_content, metadata=clean_meta))
+    return sanitized
 
 
 def _require_hf_token() -> None:
@@ -88,18 +106,29 @@ def build_embeddings():
 
 
 # --- Task 4: create and configure vector DB (Chroma) -----------------------------
-def build_vectorstore(splits: List[Document], embed_model) -> Chroma:
-    persist_dir = Path("vectorstore/chroma")
+def build_vectorstore(
+    splits: List[Document],
+    embed_model,
+    persist_directory: Optional[str] = "vectorstore/chroma",
+) -> Chroma:
+    clean_splits = _sanitize_documents_for_chroma(splits)
+
+    if persist_directory is None:
+        return Chroma.from_documents(
+            documents=clean_splits,
+            embedding=embed_model,
+        )
+
+    persist_dir = Path(persist_directory)
     if persist_dir.exists():
         shutil.rmtree(persist_dir)
     persist_dir.mkdir(parents=True, exist_ok=True)
 
-    vectordb = Chroma.from_documents(
-        documents=splits,
+    return Chroma.from_documents(
+        documents=clean_splits,
         embedding=embed_model,
         persist_directory=str(persist_dir),
     )
-    return vectordb
 
 
 # --- Task 5: develop retriever ----------------------------------------------------

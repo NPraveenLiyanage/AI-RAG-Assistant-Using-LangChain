@@ -137,7 +137,7 @@ def _build_rag(pdf_bytes: bytes):
         docs = load_documents(tmp_path)
         splits = split_documents(docs)
         embed_model = build_embeddings()
-        vectordb = build_vectorstore(splits, embed_model)
+        vectordb = build_vectorstore(splits, embed_model, persist_directory=None)
         retriever = build_retriever(vectordb)
         qa_chain = build_qa_bot(retriever)
         return qa_chain, retriever
@@ -151,6 +151,10 @@ if "messages" not in st.session_state:
 if "rag_chain" not in st.session_state:
     st.session_state.rag_chain = None
     st.session_state.retriever = None
+if "pending_send" not in st.session_state:
+    st.session_state.pending_send = False
+if "clear_prompt" not in st.session_state:
+    st.session_state.clear_prompt = False
 
 # Hero
 st.markdown("<div class='hero'><h1>Quest Analytics</h1><p>AI Research Assistant</p></div>", unsafe_allow_html=True)
@@ -177,7 +181,8 @@ def _submit_prompt() -> None:
         ])
         reply = resp.content
     st.session_state.messages.append({"role": "assistant", "content": reply})
-    st.session_state.prompt = ""
+    # Clear the input on the next rerun before the widget is instantiated.
+    st.session_state.clear_prompt = True
     st.session_state.pending_send = True
 
 # Input dock
@@ -186,6 +191,9 @@ c1, c2, c3 = st.columns([0.06, 0.78, 0.16])
 with c1:
     uploaded_file = st.file_uploader("Upload PDF", type=["pdf"], label_visibility="collapsed", key="pdf")
 with c2:
+    if st.session_state.get("clear_prompt"):
+        st.session_state.prompt = ""
+        st.session_state.clear_prompt = False
     st.text_input(
         "Question",
         placeholder="Ask anything...",
